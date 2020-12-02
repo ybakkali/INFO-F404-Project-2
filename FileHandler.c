@@ -1,16 +1,10 @@
-//
-// Created by yahyabakkali on 1/12/20.
-//
-
 #include "FileHandler.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-void getImage(const char *filename, unsigned char *image, unsigned char *blurredImage, unsigned int size) {
+void getImage(const char *filename, unsigned char *image, unsigned int size) {
     FILE* file = fopen(filename, "rb");
     fread(image, 1, size, file);
-    rewind(file);
-    fread(blurredImage, 1, size, file);
     fclose(file);
 }
 
