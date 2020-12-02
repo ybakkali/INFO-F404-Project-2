@@ -1,9 +1,12 @@
 
-all: Main.c
-	mpicc Main.c -o Main.out
+all: Main.c FileHandler.o
+	mpicc Main.c FileHandler.o -o Main.out
+
+FileHandler.o: FileHandler.h FileHandler.c
+	mpicc -c FileHandler.c
 
 run:
-	mpirun -n 1 Main.out 8
+	mpirun -n 6 Main.out 8
 
 clean:
 	rm Main.out

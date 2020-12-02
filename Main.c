@@ -1,19 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi.h"
+#include "FileHandler.h"
 
 #define W 1280
 #define H 720
 
-typedef struct Mask {
-    unsigned int start_i;
-    unsigned int start_j;
-    unsigned int stop_i;
-    unsigned int stop_j;
-} mask;
-
-
-int neighbourhood_average(int i, int j, int N, const unsigned char image[]) {
+int neighbourhoodAverage(unsigned int i, unsigned int j, unsigned int N, const unsigned char *image) {
     int sum = 0, elem_number = 0;
     for (int x = i - N; x < i + N; x++) {
         for (int y = j - N; y < j + N; y++) {
@@ -26,54 +19,76 @@ int neighbourhood_average(int i, int j, int N, const unsigned char image[]) {
     return sum / elem_number;
 }
 
-
-int main(int argc, char **argv) {
-
-    MPI_Init(&argc, &argv);
-    int N = atoi(argv[1]);
-    int rank, world_size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    //printf("%d\n", rank);
-
-
-    unsigned char image[W * H];
-    unsigned char blurred_image[W * H];
-
-    FILE* file = fopen("data/police1.raw", "rb");
-    fread(image, 1, W * H, file);
-    rewind(file);
-    fread(blurred_image, 1, W * H, file);
-
-    mask *array = malloc(1 * sizeof(mask));
-
-    FILE* f = fopen("data/mask1", "rb");
-    mask mask_;
-
-    int mask_number = 0;
-    while (fscanf(f, "%u %u %u %u", &mask_.start_i, &mask_.start_j, &mask_.stop_i, &mask_.stop_j) != EOF) {
-        array[mask_number] = mask_;
-        array = realloc(array, 2 * sizeof(mask));
-        mask_number++;
-    }
-
-    for (int index = 0 ; index < mask_number; index++) {
-        mask m = array[index];
+void blurring(const unsigned char *image, mask *maskArray, int maskNumber, unsigned char *blurredImage, int rank) {
+    for (int index = 0 ; index < maskNumber; index++) {
+        mask m = maskArray[index];
 
         for (int i = m.start_i; i < m.stop_i; i++) {
             for (int j = m.start_j; j < m.stop_j; j++) {
-
-                blurred_image[W * i + j] = neighbourhood_average(i, j, N, image);
+                if ((W * i + j) % 5 == rank) {
+                    printf("Rank %i index (%i,%i)\n", rank, i, j);
+                    blurredImage[W * i + j] = neighbourhoodAverage(i, j, 5, image);
+                }
             }
         }
     }
 
-    FILE *output = fopen( "data/blurred_image.raw" , "wb" );
-    fwrite(blurred_image , 1 , W * H , output);
+    saveBlurredImage("data/blurred_image.raw", blurredImage, W * H);
+}
 
-    fclose(output);
-    fclose(f);
-    fclose(file);
-    free(array);
+void master(MPI_Datatype MPI_MASK) {
+    unsigned char image[W * H];
+    unsigned char blurredImage[W * H];
+    mask *maskArray;
+    getImage("data/police1.raw", image, blurredImage, W * H);
+    int maskNumber = getMask("data/mask1", &maskArray);
+    MPI_Bcast(&maskNumber, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(image, W * H, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(blurredImage, W * H, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(maskArray, maskNumber, MPI_MASK, 0, MPI_COMM_WORLD);
+    blurring(image, maskArray, maskNumber, blurredImage, 0);
+    free(maskArray);
+}
+
+void slave(MPI_Datatype MPI_MASK, int rank) {
+    unsigned char image[W * H];
+    unsigned char blurredImage[W * H];
+    int maskNumber;
+    MPI_Bcast(&maskNumber, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(image, W * H, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(blurredImage, W * H, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+    mask *maskArray = malloc(maskNumber * sizeof(mask));
+    MPI_Bcast(maskArray, maskNumber, MPI_MASK, 0, MPI_COMM_WORLD);
+    blurring(image, maskArray, maskNumber, blurredImage, rank);
+    free(maskArray);
+}
+
+int main(int argc, char **argv) {
+
+    MPI_Init(&argc, &argv);
+
+    int count = 4;
+    int arrayOfBlockLengths[] = {1, 1, 1, 1};
+    MPI_Aint arrayOfDisplacements[] = {offsetof(mask, start_i), offsetof(mask, start_j),
+                                       offsetof(mask, stop_i),offsetof(mask, stop_j)};
+    MPI_Datatype arrayOfTypes[] = {MPI_UNSIGNED, MPI_UNSIGNED, MPI_UNSIGNED, MPI_UNSIGNED};
+    MPI_Datatype MPI_MASK;
+
+    MPI_Type_create_struct(count, arrayOfBlockLengths, arrayOfDisplacements, arrayOfTypes, &MPI_MASK);
+    MPI_Type_commit(&MPI_MASK);
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    unsigned int N = atoi(argv[1]);
+
+    int maskNumber;
+
+    if (rank == 0) {
+        master(MPI_MASK);
+    } else {
+        slave(MPI_MASK, rank);
+    }
     MPI_Finalize();
     return 0;
 }
