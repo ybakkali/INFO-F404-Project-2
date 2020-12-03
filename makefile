@@ -9,7 +9,7 @@ Blur.o: Blur.h Blur.c
 	mpicc -c Blur.c
 
 run:
-	mpirun -n 6 Main.out data/police1.raw data/mask1 8
+	mpirun -n 6 Main.out -f data/police1.raw -m data/mask1 -o data/blurred_image.raw -n 8
 
 clean:
-	rm Main.out
+	rm *.o*

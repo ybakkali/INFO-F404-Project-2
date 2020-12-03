@@ -1,9 +1,7 @@
 #ifndef INFO_F404_PROJECT_2_BLUR_H
 #define INFO_F404_PROJECT_2_BLUR_H
 
-#include "FileHandler.h"
-#define W 1280
-#define H 720
+#include "GLOBAL.h"
 
 int neighbourhoodAverage(unsigned int i, unsigned int j, unsigned int N, const unsigned char *image);
 void blurring(const unsigned char *image, mask *maskArray, int maskNumber,
