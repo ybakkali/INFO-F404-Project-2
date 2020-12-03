@@ -1,5 +1,5 @@
-#ifndef INFO_F404_PROJECT_2_GLOBAL_H
-#define INFO_F404_PROJECT_2_GLOBAL_H
+#ifndef GLOBAL_H
+#define GLOBAL_H
 
 #define W 1280
 #define H 720
@@ -11,4 +11,4 @@ typedef struct Mask {
     unsigned int stop_j;
 } mask;
 
-#endif //INFO_F404_PROJECT_2_GLOBAL_H
+#endif

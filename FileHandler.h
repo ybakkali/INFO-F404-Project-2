@@ -1,10 +1,11 @@
-#ifndef INFO_F404_PROJECT_2_FILEHANDLER_H
-#define INFO_F404_PROJECT_2_FILEHANDLER_H
+#ifndef FILEHANDLER_H
+#define FILEHANDLER_H
 
 #include "GLOBAL.h"
 
+int parseCommandLine(int argc, char **argv, const char **imageFilename, const char **maskFilename, const char **blurredImageFilename, unsigned int *N);
 void getImage(const char *filename, unsigned char *image, unsigned int size);
-int getMask(const char *filename, mask **maskArray);
+unsigned int getMask(const char *filename, mask **maskArray);
 void saveBlurredImage(const char *filename, unsigned char *blurredImage, unsigned int size);
 
-#endif //INFO_F404_PROJECT_2_FILEHANDLER_H
+#endif

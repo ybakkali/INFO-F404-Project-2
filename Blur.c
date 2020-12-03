@@ -10,8 +10,8 @@
  *
  * :return : the average value
  */
-int neighbourhoodAverage(unsigned int i, unsigned int j, unsigned int N, const unsigned char *image) {
-    int sum = 0, elem_number = 0;
+unsigned int neighbourhoodAverage(unsigned int i, unsigned int j, unsigned int N, const unsigned char *image) {
+    unsigned int sum = 0, elem_number = 0;
     for (int x = i - N; x < i + N; x++) {
         for (int y = j - N; y < j + N; y++) {
             // Take only the neighborhood pixel that is within the dimension of the image
@@ -32,16 +32,17 @@ int neighbourhoodAverage(unsigned int i, unsigned int j, unsigned int N, const u
  * :param maskArray: the list of masks to use to blur the image
  * :param maskNumber: the number of masks in the maskArray list
  * :param blurredImagePart: the buffer in which the blurred image part will be stored
- * :param worldSize: the number of instances in the MPI_COMM_WORLD set (process number)
+ * :param worldSize: the number of instances in the MPI_COMM_WORLD set (processes number)
+ * :param rank: the identifier (ID) of the current process
  * :param N: the size of the neighbourhood used for the blur
  */
 void blurring(const unsigned char *image, mask *maskArray, int maskNumber, unsigned char *blurredImagePart, int worldSize, int rank, int N) {
 
     // Separate the blurring task into several processes
     // Each process processes a unique part of the image designated by the [start,stop] interval
-    int start = rank * (H / worldSize);
-    int stop = (rank < worldSize - 1) ? start + (H / worldSize) : H;
-    int counter = 0;
+    unsigned int start = rank * (H / worldSize);
+    unsigned int stop = (rank < worldSize - 1) ? start + (H / worldSize) : H;
+    unsigned int counter = 0;
 
     // Before starting blurring
     // Copy the part of the image into the blurredImagePart buffer

@@ -1,11 +1,64 @@
 #include "FileHandler.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
+/*
+ * Parse the command line and extract the arguments from the options and store them.
+ *
+ * :param argc: the argument count
+ * :param argv: the argument values
+ * :param imageFilename: the buffer in which the image filename string will be stored
+ * :param maskFilename: the buffer in which the mask filename string will be stored
+ * :param blurredImageFilename: the buffer in which the blurred image filename string will be stored
+ * :param N: the neighbourhood size value
+ *
+ * : return: 1 if a mandatory option is missing in the command line, otherwise 0
+ */
+int parseCommandLine(int argc, char **argv, const char **imageFilename, const char **maskFilename, const char **blurredImageFilename, unsigned int *N) {
+
+    if (argc != 9) {
+        printf("Some options are missing\n");
+        return 1;
+    }
+
+    int option, mandatoryOptions = 0;
+    while((option = getopt(argc, argv, "f:m:o:n:")) != -1){
+        switch(option){
+            case 'f':
+                *imageFilename = optarg;
+                mandatoryOptions++;
+                break;
+            case 'm':
+                *maskFilename = optarg;
+                mandatoryOptions++;
+                break;
+            case 'o':
+                *blurredImageFilename = optarg;
+                mandatoryOptions++;
+                break;
+            case 'n':
+                *N = atoi(optarg);
+                mandatoryOptions++;
+                break;
+            case '?':
+                //printf("unknown option: %c\n", optopt);
+                return 1;
+        }
+    }
+
+    if (mandatoryOptions != 4) {
+        printf("Some mandatory options are missing\n");
+        return 1;
+    }
+
+    return 0;
+}
 
 /*
  * Read the raw image file and store it in a buffer.
  *
- * :param filename: the name of the raw image to open
+ * :param filename: the name of the raw image file to open
  * :param image: the buffer where the image will be stored
  * :param size: the size of the image which is the height * width
  */
@@ -21,13 +74,12 @@ void getImage(const char *filename, unsigned char *image, unsigned int size) {
  * :param filename: the name of the mask file to be used for the opened raw image
  * :param maskArray: the list of masks to use to blur the image
  */
-int getMask(const char *filename, mask **maskArray) {
+unsigned int getMask(const char *filename, mask **maskArray) {
     *maskArray = malloc(1 * sizeof(mask));
     FILE* file = fopen(filename, "rb");
-
+    unsigned int maskNumber = 0;
     mask mask_ = {0, 0, 0, 0};
 
-    int maskNumber = 0;
     while (fscanf(file, "%u %u %u %u", &mask_.start_i, &mask_.start_j, &mask_.stop_i, &mask_.stop_j) != EOF) {
         (*maskArray)[maskNumber] = mask_;
         maskNumber++;
@@ -40,7 +92,7 @@ int getMask(const char *filename, mask **maskArray) {
 /*
  * Create a raw blurred image file.
  *
- * :param filename : the name of the raw blurred image to save
+ * :param filename : the name of the raw blurred image file to save
  * :param blurredImage: the buffer in which the blurred image is stored
  * :param size : the size of the image which is the height * width
  */
