@@ -9,7 +9,47 @@
 
 MPI_Datatype MPI_MASK;
 
-void MPI_addNewType() {
+int parseCommandLine(int argc, char **argv, char *imageFilename, char *maskFilename, char *blurredImageFilename, int *N) {
+
+    if (argc != 9) {
+        printf("Some options are missing\n");
+        return 1;
+    }
+
+    int option, mandatoryOptions = 0;
+    while((option = getopt(argc, argv, "f:m:o:n:")) != -1){
+        switch(option){
+            case 'f':
+                strcpy(imageFilename, optarg);
+                mandatoryOptions++;
+                break;
+            case 'm':
+                strcpy(maskFilename, optarg);
+                mandatoryOptions++;
+                break;
+            case 'o':
+                strcpy(blurredImageFilename, optarg);
+                mandatoryOptions++;
+                break;
+            case 'n':
+                *N = atoi(optarg);
+                mandatoryOptions++;
+                break;
+            case '?':
+                //printf("unknown option: %c\n", optopt);
+                return 1;
+        }
+    }
+
+    if (mandatoryOptions != 4) {
+        printf("Some mandatory options are missing\n");
+        return 1;
+    }
+
+    return 0;
+}
+
+void MPI_MASKType() {
     int count = 4;
     int arrayOfBlockLengths[] = {1, 1, 1, 1};
     MPI_Aint arrayOfDisplacements[] = {offsetof(mask, start_i), offsetof(mask, start_j),
@@ -66,37 +106,22 @@ int main(int argc, char **argv) {
     int rank, worldSize;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &worldSize);
-    MPI_addNewType();
-
-    char imageFilename[100], maskFilename[100], blurredImageFilename[100];
-    int N, option;
-
-    while((option = getopt(argc, argv, ":f:m:o:n:")) != -1){
-        switch(option){
-            case 'f':
-                strcpy(imageFilename, optarg);
-                break;
-            case 'm':
-                strcpy(maskFilename, optarg);
-                break;
-            case 'o':
-                strcpy(blurredImageFilename, optarg);
-                break;
-            case 'n':
-                N = atoi(optarg);
-                break;
-            case ':':
-                printf("option needs a value\n");
-                break;
-            case '?':
-                printf("unknown option: %c\n", optopt);
-                break;
-        }
-    }
+    MPI_MASKType();
 
     if (rank == 0) {
+        char imageFilename[100], maskFilename[100], blurredImageFilename[100];
+        int N;
+
+        if (parseCommandLine(argc, argv, imageFilename, maskFilename, blurredImageFilename, &N) == 1) {
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+        }
+
+        MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
         master(imageFilename, maskFilename, blurredImageFilename, worldSize, N);
+
     } else {
+        int N;
+        MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
         slave(worldSize, rank, N);
     }
     MPI_Finalize();
