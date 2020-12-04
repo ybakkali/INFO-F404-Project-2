@@ -73,10 +73,12 @@ void getImage(const char *filename, unsigned char *image, unsigned int size) {
  *
  * :param filename: the name of the mask file to be used for the opened raw image
  * :param maskArray: the list of masks to use to blur the image
+ *
+ * :return: the number of masks
  */
 unsigned int getMask(const char *filename, mask **maskArray) {
     *maskArray = malloc(1 * sizeof(mask));
-    FILE* file = fopen(filename, "rb");
+    FILE* file = fopen(filename, "r");
     unsigned int maskNumber = 0;
     mask mask_ = {0, 0, 0, 0};
 

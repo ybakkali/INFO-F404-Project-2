@@ -5,8 +5,6 @@
 #include "Process.h"
 #include "GLOBAL.h"
 
-MPI_Datatype MPI_MASK;
-
 /*
  * Add a new MPI type to send the master's mask array to the slaves.
  */

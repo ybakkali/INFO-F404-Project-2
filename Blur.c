@@ -12,8 +12,8 @@
  */
 unsigned int neighbourhoodAverage(unsigned int i, unsigned int j, unsigned int N, const unsigned char *image) {
     unsigned int sum = 0, elem_number = 0;
-    for (int x = i - N; x < i + N; x++) {
-        for (int y = j - N; y < j + N; y++) {
+    for (int x = i - N + 1; x < i + N; x++) {
+        for (int y = j - N + 1; y < j + N; y++) {
             // Take only the neighborhood pixel that is within the dimension of the image
             // Best case 4N**2, Worst case N**2
             if (x >= 0 && x < H && y >= 0 && y < W) {
@@ -60,7 +60,7 @@ void blurring(const unsigned char *image, mask *maskArray, int maskNumber, unsig
         counter = 0;
         for (int i = start; i < stop; i++) {
             for (int j = 0; j < W; j++) {
-                if (i >= m.start_i && i < m.stop_i && j >= m.start_j && j < m.stop_j) {
+                if (i >= m.start_i && i <= m.stop_i && j >= m.start_j && j <= m.stop_j) {
                     blurredImagePart[counter] = neighbourhoodAverage(i, j, N, image);
                 }
                 counter++;

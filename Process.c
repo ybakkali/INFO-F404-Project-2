@@ -1,11 +1,8 @@
 #include <stdlib.h>
-#include <mpi.h>
 #include "Process.h"
 #include "GLOBAL.h"
 #include "FileHandler.h"
 #include "Blur.h"
-
-MPI_Datatype MPI_MASK;
 
 /*
  * The master process that will open the image and mask files and distribute them to other processes. After processing
