@@ -1,8 +1,8 @@
 #include <stdlib.h>
-#include "Process.h"
+#include "process.h"
 #include "GLOBAL.h"
-#include "FileHandler.h"
-#include "Blur.h"
+#include "fileHandler.h"
+#include "blurring.h"
 
 /*
  * The master process that will open the image and mask files and distribute them to other processes. After processing
@@ -15,22 +15,22 @@
  * :param worldSize: the number of instances in the MPI_COMM_WORLD set (processes number)
  * :param N: the size of the neighbourhood used for the blur
  */
-void master(const char *imageFilename, const char *maskFilename, const char *blurredImageFilename, int worldSize, unsigned int N) {
+void master(const char *imageFilename, const char *maskFilename, const char *blurredImageFilename, int worldSize, int N) {
 
     int size = (H / worldSize) * W;
     unsigned char image[W * H], blurredImage[W * H], blurredImagePart[size];
-    unsigned int imagePartSizes[worldSize], displacements[worldSize];
+    int imagePartSizes[worldSize], displacements[worldSize];
     mask *maskArray;
 
-    for (int i = 0; i < worldSize; ++i) {
+    for (int i = 0; i < worldSize; i++) {
         imagePartSizes[i] = (i == worldSize - 1) ? (H / worldSize) * W + (H % worldSize) : (H / worldSize) * W;
         displacements[i] = (i == 0) ? 0 : displacements[i - 1] + imagePartSizes[i - 1];
     }
 
     getImage(imageFilename, image, W * H);
-    unsigned int maskNumber = getMask(maskFilename, &maskArray);
+    int maskNumber = getMask(maskFilename, &maskArray);
 
-    MPI_Bcast(&maskNumber, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&maskNumber, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(image, W * H, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
     MPI_Bcast(maskArray, maskNumber, MPI_MASK, 0, MPI_COMM_WORLD);
 
@@ -50,12 +50,12 @@ void master(const char *imageFilename, const char *maskFilename, const char *blu
  * :param rank: the identifier (ID) of the current process
  * :param N: the size of the neighbourhood used for the blur
  */
-void slave(int worldSize, int rank, unsigned int N) {
-    unsigned int size = (rank == worldSize - 1) ? (H / worldSize) * W + (H % worldSize) : (H / worldSize) * W;
+void slave(int worldSize, int rank, int N) {
+    int size = (rank == worldSize - 1) ? (H / worldSize) * W + (H % worldSize) : (H / worldSize) * W;
     unsigned char image[W * H], blurredImagePart[size];
-    unsigned int maskNumber;
+    int maskNumber;
 
-    MPI_Bcast(&maskNumber, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&maskNumber, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(image, W * H, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
     mask *maskArray = malloc(maskNumber * sizeof(mask));

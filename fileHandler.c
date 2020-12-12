@@ -1,4 +1,4 @@
-#include "FileHandler.h"
+#include "fileHandler.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -15,7 +15,7 @@
  *
  * : return: 1 if a mandatory option is missing in the command line, otherwise 0
  */
-int parseCommandLine(int argc, char **argv, const char **imageFilename, const char **maskFilename, const char **blurredImageFilename, unsigned int *N) {
+int parseCommandLine(int argc, char **argv, const char **imageFilename, const char **maskFilename, const char **blurredImageFilename, int *N) {
 
     if (argc != 9) {
         printf("Some options are missing\n");
@@ -62,7 +62,7 @@ int parseCommandLine(int argc, char **argv, const char **imageFilename, const ch
  * :param image: the buffer where the image will be stored
  * :param size: the size of the image which is the height * width
  */
-void getImage(const char *filename, unsigned char *image, unsigned int size) {
+void getImage(const char *filename, unsigned char *image, int size) {
     FILE* file = fopen(filename, "rb");
     fread(image, 1, size, file);
     fclose(file);
@@ -76,13 +76,13 @@ void getImage(const char *filename, unsigned char *image, unsigned int size) {
  *
  * :return: the number of masks
  */
-unsigned int getMask(const char *filename, mask **maskArray) {
+int getMask(const char *filename, mask **maskArray) {
     *maskArray = malloc(1 * sizeof(mask));
     FILE* file = fopen(filename, "r");
-    unsigned int maskNumber = 0;
+    int maskNumber = 0;
     mask mask_ = {0, 0, 0, 0};
 
-    while (fscanf(file, "%u %u %u %u", &mask_.start_i, &mask_.start_j, &mask_.stop_i, &mask_.stop_j) != EOF) {
+    while (fscanf(file, "%i %i %i %i", &mask_.start_i, &mask_.start_j, &mask_.stop_i, &mask_.stop_j) != EOF) {
         (*maskArray)[maskNumber] = mask_;
         maskNumber++;
         *maskArray = realloc(*maskArray, (maskNumber + 1) * sizeof(mask));
@@ -98,7 +98,7 @@ unsigned int getMask(const char *filename, mask **maskArray) {
  * :param blurredImage: the buffer in which the blurred image is stored
  * :param size : the size of the image which is the height * width
  */
-void saveBlurredImage(const char *filename, unsigned char *blurredImage, unsigned int size) {
+void saveBlurredImage(const char *filename, unsigned char *blurredImage, int size) {
     FILE *file = fopen(filename, "wb" );
     fwrite(blurredImage, 1, size, file);
     fclose(file);

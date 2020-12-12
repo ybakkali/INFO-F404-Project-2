@@ -8,10 +8,10 @@
 MPI_Datatype MPI_MASK;
 
 typedef struct Mask {
-    unsigned int start_i;
-    unsigned int start_j;
-    unsigned int stop_i;
-    unsigned int stop_j;
+    int start_i;
+    int start_j;
+    int stop_i;
+    int stop_j;
 } mask;
 
 #endif

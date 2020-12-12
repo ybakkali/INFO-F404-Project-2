@@ -1,18 +1,18 @@
 
-all: Main.c FileHandler.o Blur.o Process.o
-	mpicc Main.c FileHandler.o Blur.o Process.o -o Main.out
+all: blur.c fileHandler.o blurring.o process.o
+	mpicc blur.c fileHandler.o blurring.o process.o -o blur -Wall
 
-FileHandler.o: FileHandler.h FileHandler.c
-	mpicc -c FileHandler.c
+fileHandler.o: fileHandler.h fileHandler.c
+	mpicc -c fileHandler.c -Wall
 
-Process.o: Process.h Process.c
-	mpicc -c Process.c
+process.o: process.h process.c
+	mpicc -c process.c -Wall
 
-Blur.o: Blur.h Blur.c
-	mpicc -c Blur.c
+blurring.o: blurring.h blurring.c
+	mpicc -c blurring.c -Wall
 
 run:
-	mpirun -n 6 Main.out -f data/police1.raw -m data/mask1 -o data/blurred_image.raw -n 5
+	mpirun -n 6 blur -f data/police1.raw -m data/mask1 -o data/blurred_image.raw -n 5
 
 clean:
 	rm *.o*
