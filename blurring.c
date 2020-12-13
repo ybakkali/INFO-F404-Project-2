@@ -1,5 +1,4 @@
 #include "blurring.h"
-#include <stdio.h>
 
 /*
  * Compute the average value of the pixel at the (x,y) coordinate of the image with a neighborhood of size N
@@ -43,10 +42,10 @@ void blurring(const unsigned char *image, mask *maskArray, int maskNumber, unsig
     // Each process processes a unique part of the image designated by the [start,stop] interval
     int start = rank * (H / worldSize);
     int stop = (rank < worldSize - 1) ? start + (H / worldSize) : H;
-    int counter = 0;
 
     // Before starting blurring
     // Copy the part of the image into the blurredImagePart buffer
+    int counter = 0;
     for (int i = start; i < stop; i++) {
         for (int j = 0; j < W; j++) {
             blurredImagePart[counter] = image[W * i + j];
@@ -58,13 +57,11 @@ void blurring(const unsigned char *image, mask *maskArray, int maskNumber, unsig
     // Blurring each pixel in the interval of the mask belonging to the maskArray
     for (int index = 0 ; index < maskNumber; index++) {
         mask m = maskArray[index];
-        counter = 0;
-        for (int i = start; i < stop; i++) {
-            for (int j = 0; j < W; j++) {
-                if (i >= m.start_i && i <= m.stop_i && j >= m.start_j && j <= m.stop_j) {
-                    blurredImagePart[counter] = neighbourhoodAverage(i, j, N, image);
+        for (int i = m.start_i; i <= m.stop_i; i++) {
+            for (int j = m.start_j; j <= m.stop_j; j++) {
+                if (i >= start && i < stop) {
+                    blurredImagePart[W * (i % (stop - start)) + j] = neighbourhoodAverage(i, j, N, image);
                 }
-                counter++;
             }
         }
     }

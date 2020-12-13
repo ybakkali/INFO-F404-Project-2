@@ -1,9 +1,9 @@
 
-all: blur.c fileHandler.o blurring.o process.o
-	mpicc blur.c fileHandler.o blurring.o process.o -o blur -Wall
+all: blur.c utils.o blurring.o process.o
+	mpicc blur.c utils.o blurring.o process.o -o blur -Wall
 
-fileHandler.o: fileHandler.h fileHandler.c
-	mpicc -c fileHandler.c -Wall
+utils.o: utils.h utils.c
+	mpicc -c utils.c -Wall
 
 process.o: process.h process.c
 	mpicc -c process.c -Wall

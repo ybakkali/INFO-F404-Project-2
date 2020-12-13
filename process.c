@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include "process.h"
 #include "GLOBAL.h"
-#include "fileHandler.h"
+#include "utils.h"
 #include "blurring.h"
 
 /*
- * The master process that will open the image and mask files and distribute them to other processes. After processing
- * one part of the image and blurring it, it will gather the other processed part sent by the slave processes and save
- * the blurred image as a file.
+ * The master process that will parse the command line and extract the options arguments, open the image and mask
+ * files and distribute them to other processes. After processing one part of the image and blurring it, it will gather
+ * the other processed part sent by the slave processes and save the blurred image as a file.
  *
  * :param imageFilename: the name of the raw image file to open
  * :param maskFilename: the name of the mask file to be used for the opened raw image
@@ -15,7 +15,14 @@
  * :param worldSize: the number of instances in the MPI_COMM_WORLD set (processes number)
  * :param N: the size of the neighbourhood used for the blur
  */
-void master(const char *imageFilename, const char *maskFilename, const char *blurredImageFilename, int worldSize, int N) {
+void master(int argc, char **argv, int worldSize) {
+
+    const char *imageFilename, *maskFilename, *blurredImageFilename;
+    int N;
+
+    if (parseCommandLine(argc, argv, &imageFilename, &maskFilename, &blurredImageFilename, &N) == 1) {
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
 
     int size = (H / worldSize) * W;
     unsigned char image[W * H], blurredImage[W * H], blurredImagePart[size];
@@ -30,6 +37,7 @@ void master(const char *imageFilename, const char *maskFilename, const char *blu
     getImage(imageFilename, image, W * H);
     int maskNumber = getMask(maskFilename, &maskArray);
 
+    MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&maskNumber, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(image, W * H, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
     MPI_Bcast(maskArray, maskNumber, MPI_MASK, 0, MPI_COMM_WORLD);
@@ -50,11 +58,12 @@ void master(const char *imageFilename, const char *maskFilename, const char *blu
  * :param rank: the identifier (ID) of the current process
  * :param N: the size of the neighbourhood used for the blur
  */
-void slave(int worldSize, int rank, int N) {
+void slave(int worldSize, int rank) {
     int size = (rank == worldSize - 1) ? (H / worldSize) * W + (H % worldSize) : (H / worldSize) * W;
     unsigned char image[W * H], blurredImagePart[size];
-    int maskNumber;
+    int N, maskNumber;
 
+    MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&maskNumber, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(image, W * H, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 

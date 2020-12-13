@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "fileHandler.h"
+#include "utils.h"
 #include "process.h"
 #include "GLOBAL.h"
 
@@ -27,20 +27,11 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &worldSize);
     MPI_MASKType();
-    int N;
 
     if (rank == 0) {
-        const char *imageFilename, *maskFilename, *blurredImageFilename;
-        if (parseCommandLine(argc, argv, &imageFilename, &maskFilename, &blurredImageFilename, &N) == 1) {
-            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-        }
-
-        MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        master(imageFilename, maskFilename, blurredImageFilename, worldSize, N);
-
+        master(argc, argv, worldSize);
     } else {
-        MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        slave(worldSize, rank, N);
+        slave(worldSize, rank);
     }
     MPI_Finalize();
     return 0;
